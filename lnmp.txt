@@ -1,0 +1,39 @@
+lnmp在ubuntu下的安装和配置
+在ubuntu10.10下的安装nginx, mysql,php
+
+可以下载lnmp.org的一键安装包，它是通过编译安装的，需要花时间。因此直接用源里的包安装，当然版本一般不是最新的。
+
+1.安装nginx, mysql,php
+sudo apt-get install nginx php5-cgi php5-mysql mysql
+
+
+2.配置nginx，使它支持fastcgi
+打开/etc/nginx/sites-available/default文件,更改网站根目录
+root /home/www
+然后将
+#location ~ \.php$ {
+#fastcgi_pass 127.0.0.1:9000;cgi端口
+#fastcgi_index index.php;
+#fastcgi_param SCRIPT_FILENAME /scripts$fastcgi_script_name;
+#ncludefastcgi_params;
+#}
+改成
+
+location ~ \.php$ {
+fastcgi_pass 127.0.0.1:9000;
+fastcgi_index index.php;
+#fastcgi_param SCRIPT_FILENAME 室home/www$fastcgi_script_name 前面就是网站根目录
+include /etc/nginx/fastcgi_params; #fastcgi的参数文件地址
+}
+
+3. 将/etc/php5/cgi/php.ini中，增加
+cgi.fix_pathinfo=1; 去掉注释即可
+这样php-cgi方能正常使用SCRIPT_FILENAME这个变量
+
+4.安装spawn-fcgi 用来启动php5-cgi 
+因为nginx无法直接启动php5-cgi
+sudo apt-get install spawn-fcgi
+
+5.用spawn-fcgi 启动php5-cgi 
+sudo /usr/bin/spawn-fcgi -a 127.0.0.1 -p 9000 -C 5 -u www-data -g www-data -f /usr/bin/php5-cgi -P /var/run/fastcgi-php.pid
+以将这行代码加入到/etc/rc.local文件底部，这样系统启动的时候也可以同时启动PHP的FastCGI进程
